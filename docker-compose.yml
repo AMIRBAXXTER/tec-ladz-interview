@@ -1,0 +1,110 @@
+
+services:
+  django:
+    image: tek-lads-interview
+    container_name: django
+    build:
+      context: ./codes
+    command: sh -c "python manage.py create_manager_group && python manage.py makemigrations && python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - ./codes:/codes/
+      - /codes/static/
+    ports:
+      - "8000:8000"
+    environment:
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-pj5-gr6lsn1+zbe_e_5*#cbla@i0*f=v526h-n34fqh9i7!9h6
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=tec-lads-interview
+      - POSTGRES_USER=tec_lads_admin
+      - POSTGRES_PASSWORD=abcdefgh
+      - POSTGRES_PORT=5432
+      - REDIS_URL=redis://redis:6379/1
+    restart: always
+    networks:
+      - main
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=tec-lads-interview
+      - POSTGRES_USER=tec_lads_admin
+      - POSTGRES_PASSWORD=abcdefgh
+    networks:
+      - main
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.0.11-alpine
+    ports:
+      - "6379:6379"
+    container_name: redis
+    restart: always
+    networks:
+      - main
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: teclads_user
+      RABBITMQ_DEFAULT_PASS: teclads1234
+    restart: always
+    networks:
+      - main
+
+  celery:
+    container_name: celery
+    build:
+      context: ./codes
+      dockerfile: Dockerfile
+    command: celery --app=config.celery_base worker -l INFO -Q tasks
+    volumes:
+      - ./codes:/codes/
+    environment:
+      - CELERY_BROKER_URL=amqp://teclads_user:teclads1234@rabbitmq:5672/
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-pj5-gr6lsn1+zbe_e_5*#cbla@i0*f=v526h-n34fqh9i7!9h6
+    restart: always
+    depends_on:
+      - redis
+      - django
+      - rabbitmq
+    networks:
+      - main
+
+  nginx:
+    container_name: nginx
+    build:
+      context: ./codes/nginx
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/usr/share/nginx/html/static
+    depends_on:
+      - django
+    networks:
+      - main
+
+networks:
+  main:
+    name: main
+volumes:
+  postgres_data:
+    name: postgres_data
+  static_volume:
+    name: static_volume

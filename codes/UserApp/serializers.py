@@ -27,9 +27,10 @@ class RegisterOTPCheckSerializer(serializers.Serializer):
 
 
 class RegisterVerifySerializer(serializers.ModelSerializer):
+    is_manager = serializers.BooleanField(default=False)
     class Meta:
         model = CustomUser
-        fields = ['phone_number', 'first_name', 'last_name', 'password']
+        fields = ['phone_number', 'first_name', 'last_name', 'email', 'password', 'is_manager']
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate_password(self, value):
@@ -41,13 +42,14 @@ class RegisterVerifySerializer(serializers.ModelSerializer):
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    successful_logins = serializers.IntegerField(read_only=True)
     class Meta:
         model = CustomUser
-        exclude = ['password', 'id']
+        include = ['__all__', 'successful_logins']
+        exclude = ['password']
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['first_name', 'last_name', 'email', 'profile_picture']
-

@@ -5,7 +5,8 @@ services:
     container_name: django
     build:
       context: ./codes
-    command: sh -c "python manage.py create_manager_group && python manage.py makemigrations && python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+#    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py create_manager_group && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py create_manager_group &&  python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./codes:/codes/
       - /codes/static/
@@ -21,6 +22,7 @@ services:
       - POSTGRES_PASSWORD=abcdefgh
       - POSTGRES_PORT=5432
       - REDIS_URL=redis://redis:6379/1
+      - CELERY_BROKER_URL=amqp://teclads_user:teclads1234@rabbitmq:5672/
     restart: always
     networks:
       - main
@@ -75,10 +77,16 @@ services:
     volumes:
       - ./codes:/codes/
     environment:
-      - CELERY_BROKER_URL=amqp://teclads_user:teclads1234@rabbitmq:5672/
-      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
       - DEBUG=True
       - SECRET_KEY=django-insecure-pj5-gr6lsn1+zbe_e_5*#cbla@i0*f=v526h-n34fqh9i7!9h6
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=tec-lads-interview
+      - POSTGRES_USER=tec_lads_admin
+      - POSTGRES_PASSWORD=abcdefgh
+      - POSTGRES_PORT=5432
+      - REDIS_URL=redis://redis:6379/1
+      - CELERY_BROKER_URL=amqp://teclads_user:teclads1234@rabbitmq:5672/
     restart: always
     depends_on:
       - redis

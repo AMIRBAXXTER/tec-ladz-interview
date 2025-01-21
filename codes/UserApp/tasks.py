@@ -11,4 +11,7 @@ def unblock_user(user_id):
 
 @app.task(queue='tasks')
 def send_sms(phone_number, message):
-    print(f'message: ({message}) sent to {phone_number}')
+    try:
+        print(f'message: ({message}) sent to {phone_number}')
+    except Exception as e:
+        print(e)

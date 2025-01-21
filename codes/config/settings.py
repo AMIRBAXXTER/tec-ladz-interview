@@ -45,7 +45,8 @@ INSTALLED_APPS = [
 
     # external apps
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'drf_spectacular'
 ]
 
 MIDDLEWARE = [
@@ -56,6 +57,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'UserApp.middleware.FailedLoginMiddleware',
+    'UserApp.middleware.FailedRegisterMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -147,10 +150,11 @@ AUTH_USER_MODEL = 'UserApp.CustomUser'
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        'rest_framework.authentication.TokenAuthentication',
+        'UserApp.utils.BearerTokenAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Celery configs
@@ -174,4 +178,10 @@ CACHES = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
+}
+SPECTACULAR_SETTINGS = {
+    'SWAGGER_UI_SETTINGS': {
+        'supportedSubmitMethods': ['get', 'post', 'put', 'delete'],
+    },
+    'SECURITY': [],
 }

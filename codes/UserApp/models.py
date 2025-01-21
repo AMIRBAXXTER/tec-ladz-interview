@@ -18,11 +18,11 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone_number, password):
-        user = self.create_user(phone_number, password)
+    def create_superuser(self, phone_number, password, **extra_fields):
+        user = self.create_user(phone_number, password, **extra_fields)
         user.is_manager = True
         user.is_superuser = True
-        manager_group = Group.objects.get(name='manager')
+        manager_group, created = Group.objects.get_or_create(name='manager')
         user.groups.add(manager_group)
         user.save(using=self._db)
         return user
@@ -33,9 +33,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, GetOrNoneMixin):
     first_name = models.CharField(max_length=255, verbose_name='نام')
     last_name = models.CharField(max_length=255, verbose_name='نام خانوادگی')
     email = models.EmailField(max_length=255, unique=True, verbose_name='ایمیل')
-    profile_picture = models.ImageField(upload_to='profile_pictures', null=True, blank=True, verbose_name='تصویر پروفایل')
+    profile_picture = models.ImageField(upload_to='profile_pictures', null=True, blank=True,
+                                        verbose_name='تصویر پروفایل')
     is_superuser = models.BooleanField(default=False)
     is_manager = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'phone_number'
 
@@ -45,8 +47,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, GetOrNoneMixin):
     objects = CustomUserManager()
 
 
+class UserLogins(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    successful_logins = models.IntegerField(default=0)
+
+
 class OTP(models.Model, GetOrNoneMixin):
-    phone_number = models.CharField(max_length=11,null=True, verbose_name='شماره تماس')
+    phone_number = models.CharField(max_length=11, null=True, verbose_name='شماره تماس')
     otp = models.CharField(max_length=6, null=True, blank=True, verbose_name='کد تایید')
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -15,5 +15,5 @@ urlpatterns = [
     path('register-verify/', RegisterVerify.as_view(), name='register verify'),
     path('users-management/', include(manager_router.urls), name='users management'),
     path('users-list-with-logins-count/', UsersListWithLoginsCount.as_view(), name='users list with logins count'),
-    path('update/', UserUpdate.as_view(), name='update'),
+    path('user-update/', UserUpdate.as_view(), name='user update'),
 ]

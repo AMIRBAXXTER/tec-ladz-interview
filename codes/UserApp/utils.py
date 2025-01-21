@@ -1,7 +1,13 @@
+from django.contrib.auth.signals import user_logged_in
 from rest_framework import serializers, status
 from rest_framework.response import Response
+from rest_framework.authentication import TokenAuthentication
 from django.core.cache import cache
 from .models import CustomUser
+
+
+class BearerTokenAuthentication(TokenAuthentication):
+    keyword = 'Bearer'
 
 
 def check_phone(phone_number, self=None):
@@ -25,4 +31,4 @@ def check_block_status(request, is_registered=True):
     blocked_ip_key = f'blocked_ip_{request.META.get("REMOTE_ADDR")}'
     is_blocked = cache.get(blocked_ip_key)
     if is_blocked:
-        return Response({'message': 'IP is blocked'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'IP is blocked'}, status=status.HTTP_403_FORBIDDEN)

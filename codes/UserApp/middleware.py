@@ -21,24 +21,32 @@ class FailedLoginMiddleware:
 
                 if user:
                     user_key = f'failed_login_tries_{phone_number}'
-                    user_attempts = int(cache.get(user_key, 0))
-                    if user_attempts == 1:
+                    user_attempts = cache.get(user_key)
+                    if user_attempts is None:
+                        cache.set(user_key, 1)
                         cache.expire(user_key, 15 * 60)
-                    elif user_attempts >= 4:
+
+                    elif user_attempts >= 3:
                         user.is_active = False
                         user.save()
-                        unblock_user.apply_async(args=[user.id], countdown=15 * 60)
-                    cache.incr(user_key)
+                        unblock_user.apply_async(args=[user.id], countdown=60 * 60)
+                        cache.delete(user_key)
+                    else:
+                        cache.incr(user_key)
                 else:
                     ip_key = f'failed_login_tries_{ip}'
-                    ip_attempts = int(cache.get(ip_key, 0))
-                    if ip_attempts == 0:
+                    ip_attempts = cache.get(ip_key)
+                    if ip_attempts is None:
+                        cache.set(ip_key, 1)
                         cache.expire(ip_key, 15 * 60)
-                    elif ip_attempts >= 4:
+
+                    elif ip_attempts >= 3:
                         blocked_ip_key = f'blocked_ip_{ip}'
-                        cache.set(blocked_ip_key, True, countdown=60 * 60)
+                        cache.set(blocked_ip_key, True)
+                        cache.expire(blocked_ip_key, 60 * 60)
                         cache.delete(ip_key)
-                    cache.incr(ip_key)
+                    else:
+                        cache.incr(ip_key)
 
         response = self.get_response(request)
         return response
@@ -60,12 +68,16 @@ class FailedRegisterMiddleware:
                 registered_otp = OTP.get_or_none(phone_number=phone_number)
                 if registered_otp is not None and registered_otp.otp != otp:
                     ip_key = f'failed_register_tries_{ip}'
-                    ip_attempts = int(cache.get(ip_key, 0))
-                    if ip_attempts == 0:
+                    ip_attempts = cache.get(ip_key)
+                    if ip_attempts is None:
+                        cache.set(ip_key, 1)
                         cache.expire(ip_key, 15 * 60)
-                    elif ip_attempts >= 4:
-                        cache.set(blocked_ip_key, True, countdown=60 * 60)
-                    cache.incr(ip_key)
+                    elif ip_attempts >= 3:
+                        cache.set(blocked_ip_key, True)
+                        cache.expire(blocked_ip_key, 60 * 60)
+                        cache.delete(ip_key)
+                    else:
+                        cache.incr(ip_key)
 
         response = self.get_response(request)
 
